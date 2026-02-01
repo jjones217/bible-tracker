@@ -129,6 +129,7 @@ export default function BibleTracker() {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [showReset, setShowReset] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(false);
 
   useEffect(() => {
     const d = loadData();
@@ -241,6 +242,80 @@ export default function BibleTracker() {
             <span style={{ fontSize: 11, color: "#6b5f4e" }}>{66 - BIBLE_BOOKS.filter(b => getBookStats(data, b.name, b.chapters).read === b.chapters).length} books remaining</span>
           </div>
         </div>
+
+        {/* Books Completed Section */}
+        {(() => {
+          const completedBooks = BIBLE_BOOKS.filter(b => getBookStats(data, b.name, b.chapters).read === b.chapters);
+          return (
+            <div style={{
+              background: "linear-gradient(135deg, #2a2118 0%, #231c15 100%)",
+              borderRadius: 14,
+              marginBottom: 20,
+              border: "1px solid rgba(196,168,130,0.15)",
+              overflow: "hidden",
+            }}>
+              {/* Toggleable Header */}
+              <div
+                onClick={() => setShowCompleted(!showCompleted)}
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 22px", cursor: "pointer" }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <Award size={18} color="#c4a882" />
+                  <span style={{ fontSize: 14, color: "#c4a882", letterSpacing: 1 }}>Books Completed</span>
+                  <span style={{
+                    fontSize: 11,
+                    background: completedBooks.length > 0 ? "rgba(196,168,130,0.2)" : "rgba(138,126,110,0.15)",
+                    color: completedBooks.length > 0 ? "#c4a882" : "#6b5f4e",
+                    padding: "2px 8px",
+                    borderRadius: 10,
+                  }}>{completedBooks.length} / 66</span>
+                </div>
+                {showCompleted ? <ChevronDown size={16} color="#8a7e6e" /> : <ChevronRight size={16} color="#8a7e6e" />}
+              </div>
+
+              {/* Expanded List */}
+              {showCompleted && (
+                <div style={{ borderTop: "1px solid rgba(196,168,130,0.1)", padding: "14px 22px 18px" }}>
+                  {completedBooks.length === 0 ? (
+                    <p style={{ margin: 0, fontSize: 13, color: "#6b5f4e", fontStyle: "italic" }}>
+                      No books completed yet. Keep reading!
+                    </p>
+                  ) : (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                      {completedBooks.map((book) => {
+                        const stats = getBookStats(data, book.name, book.chapters);
+                        return (
+                          <div key={book.name} style={{
+                            background: "rgba(139,109,75,0.15)",
+                            border: "1px solid rgba(196,168,130,0.25)",
+                            borderRadius: 20,
+                            padding: "5px 12px",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                          }}>
+                            <div style={{
+                              width: 14, height: 14, borderRadius: "50%",
+                              background: "linear-gradient(135deg, #8b6d4b, #c4a882)",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              fontSize: 8, color: "#1a1410", fontWeight: 700,
+                            }}>✓</div>
+                            <span style={{ fontSize: 13, color: "#d4c8b8" }}>{book.name}</span>
+                            {stats.totalReads > book.chapters && (
+                              <span style={{ fontSize: 10, color: "#8a7e6e", display: "flex", alignItems: "center", gap: 2 }}>
+                                <RotateCcw size={8} color="#8a7e6e" />{Math.floor(stats.totalReads / book.chapters)}×
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Controls */}
         <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
