@@ -1,0 +1,15 @@
+{
+  "name": "bible-tracker",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "lucide-react": "^0.263.1",
+    "react-scripts": "^5.0.1"
+  }
+}
