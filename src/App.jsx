@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { ChevronDown, ChevronRight, BookOpen, RotateCcw, Award } from "lucide-react";
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
+import { getDatabase, ref, get, set } from "firebase/database";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDcGf3RewwFxVzQmQWl3-LhasbJNNob5eU",
@@ -15,7 +15,7 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const database = getDatabase(app);
 
 const BIBLE_BOOKS = [
   { name: "Genesis", chapters: 50, testament: "OT" },
@@ -127,10 +127,10 @@ function initData() {
 
 async function loadData() {
   try {
-    const docRef = doc(db, "users", "main");
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      return docSnap.data().reading || initData();
+    const dataRef = ref(database, 'reading');
+    const snapshot = await get(dataRef);
+    if (snapshot.exists()) {
+      return snapshot.val();
     }
   } catch (e) {
     console.error("Load failed:", e);
@@ -140,8 +140,8 @@ async function loadData() {
 
 async function saveData(data) {
   try {
-    const docRef = doc(db, "users", "main");
-    await setDoc(docRef, { reading: data });
+    const dataRef = ref(database, 'reading');
+    await set(dataRef, data);
   } catch (e) {
     console.error("Save failed:", e);
   }
