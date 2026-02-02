@@ -1,6 +1,21 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { ChevronDown, ChevronRight, BookOpen, RotateCcw, Award } from "lucide-react";
+import { initializeApp } from "firebase/app";
+import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDcGf3RewwFxVzQmQWl3-LhasbJNNob5eU",
+  authDomain: "bible-tracker-f7fa8.firebaseapp.com",
+  databaseURL: "https://bible-tracker-f7fa8-default-rtdb.firebaseio.com",
+  projectId: "bible-tracker-f7fa8",
+  storageBucket: "bible-tracker-f7fa8.firebasestorage.app",
+  messagingSenderId: "587610044890",
+  appId: "1:587610044890:web:0df524416f2636c4ff28e3",
+  measurementId: "G-R57HCKQ2HC"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 const BIBLE_BOOKS = [
   { name: "Genesis", chapters: 50, testament: "OT" },
@@ -110,19 +125,25 @@ function initData() {
   return data;
 }
 
-function loadData() {
+async function loadData() {
   try {
-    const saved = localStorage.getItem("bible-reading-data");
-    if (saved) return JSON.parse(saved);
-  } catch (e) {}
+    const docRef = doc(db, "users", "main");
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return docSnap.data().reading || initData();
+    }
+  } catch (e) {
+    console.error("Load failed:", e);
+  }
   return initData();
 }
 
-function saveData(data) {
+async function saveData(data) {
   try {
-    localStorage.setItem("bible-reading-data", JSON.stringify(data));
+    const docRef = doc(db, "users", "main");
+    await setDoc(docRef, { reading: data });
   } catch (e) {
-    console.error("Save failed", e);
+    console.error("Save failed:", e);
   }
 }
 
@@ -156,9 +177,7 @@ export default function BibleTracker() {
   const [showCompleted, setShowCompleted] = useState(false);
 
   useEffect(() => {
-    const d = loadData();
-    setData(d);
-    setLoading(false);
+    loadData().then((d) => { setData(d); setLoading(false); });
   }, []);
 
   const updateChapter = useCallback((bookName, chapter, delta) => {
@@ -171,10 +190,10 @@ export default function BibleTracker() {
     });
   }, []);
 
-  const resetAll = () => {
+  const resetAll = async () => {
     const fresh = initData();
     setData(fresh);
-    saveData(fresh);
+    await saveData(fresh);
     setShowReset(false);
   };
 
@@ -213,7 +232,6 @@ export default function BibleTracker() {
 
       <div style={{ position: "relative", zIndex: 1, maxWidth: 680, margin: "0 auto", padding: "24px 16px 40px" }}>
 
-        {/* Header */}
         <div style={{ textAlign: "center", marginBottom: 28, paddingTop: 8 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 6 }}>
             <BookOpen size={22} color={C.accent} />
@@ -225,7 +243,6 @@ export default function BibleTracker() {
           <p style={{ margin: 0, fontSize: 13, color: C.textMid, letterSpacing: 1 }}>Track your journey through God's Word</p>
         </div>
 
-        {/* Overall Progress Card */}
         <div style={{
           background: "linear-gradient(135deg, " + C.cardBg + " 0%, " + C.cardBgAlt + " 100%)",
           borderRadius: 14, padding: "20px 22px", marginBottom: 20,
@@ -260,7 +277,6 @@ export default function BibleTracker() {
           </div>
         </div>
 
-        {/* Books Completed */}
         <div style={{
           background: "linear-gradient(135deg, " + C.cardBg + " 0%, " + C.cardBgAlt + " 100%)",
           borderRadius: 14, marginBottom: 20,
@@ -314,7 +330,6 @@ export default function BibleTracker() {
           )}
         </div>
 
-        {/* Controls */}
         <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
           {["All", "OT", "NT"].map((f) => (
             <button key={f} onClick={() => setFilter(f)} style={{
@@ -347,7 +362,6 @@ export default function BibleTracker() {
           </button>
         </div>
 
-        {/* Reset Modal */}
         {showReset && (
           <div style={{
             position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 100,
@@ -374,7 +388,6 @@ export default function BibleTracker() {
           </div>
         )}
 
-        {/* Book List */}
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {filteredBooks.map((book) => {
             const stats = getBookStats(data, book.name, book.chapters);
@@ -473,7 +486,6 @@ export default function BibleTracker() {
           })}
         </div>
 
-        {/* Legend */}
         <div style={{ marginTop: 24, padding: "14px 18px", background: "rgba(22,42,28,0.4)", borderRadius: 10, border: "1px solid " + C.borderDim }}>
           <div style={{ fontSize: 11, color: C.textDim, marginBottom: 8, letterSpacing: 0.8, textTransform: "uppercase" }}>Legend</div>
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
