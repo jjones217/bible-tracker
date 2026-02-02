@@ -1,115 +1,115 @@
-import { useState, useEffect, useCallback } from “react”;
-import { ChevronDown, ChevronRight, BookOpen, RotateCcw, Award } from “lucide-react”;
-import { initializeApp } from “firebase/app”;
-import { getDatabase, ref, get, set } from “firebase/database”;
+import { useState, useEffect, useCallback } from "react”;
+import { ChevronDown, ChevronRight, BookOpen, RotateCcw, Award } from "lucide-react”;
+import { initializeApp } from "firebase/app”;
+import { getDatabase, ref, get, set } from "firebase/database”;
 
 const firebaseConfig = {
-apiKey: “AIzaSyDcGf3RewwFxVzQmQWl3-LhasbJNNob5eU”,
-authDomain: “bible-tracker-f7fa8.firebaseapp.com”,
-databaseURL: “https://bible-tracker-f7fa8-default-rtdb.firebaseio.com”,
-projectId: “bible-tracker-f7fa8”,
-storageBucket: “bible-tracker-f7fa8.firebasestorage.app”,
-messagingSenderId: “587610044890”,
-appId: “1:587610044890:web:0df524416f2636c4ff28e3”,
-measurementId: “G-R57HCKQ2HC”
+apiKey: "AIzaSyDcGf3RewwFxVzQmQWl3-LhasbJNNob5eU”,
+authDomain: "bible-tracker-f7fa8.firebaseapp.com”,
+databaseURL: "https://bible-tracker-f7fa8-default-rtdb.firebaseio.com”,
+projectId: "bible-tracker-f7fa8”,
+storageBucket: "bible-tracker-f7fa8.firebasestorage.app”,
+messagingSenderId: "587610044890”,
+appId: "1:587610044890:web:0df524416f2636c4ff28e3”,
+measurementId: "G-R57HCKQ2HC”
 };
 
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
 
 const BIBLE_BOOKS = [
-{ name: “Genesis”, chapters: 50, testament: “OT” },
-{ name: “Exodus”, chapters: 40, testament: “OT” },
-{ name: “Leviticus”, chapters: 27, testament: “OT” },
-{ name: “Numbers”, chapters: 36, testament: “OT” },
-{ name: “Deuteronomy”, chapters: 34, testament: “OT” },
-{ name: “Joshua”, chapters: 24, testament: “OT” },
-{ name: “Judges”, chapters: 21, testament: “OT” },
-{ name: “Ruth”, chapters: 4, testament: “OT” },
-{ name: “1 Samuel”, chapters: 31, testament: “OT” },
-{ name: “2 Samuel”, chapters: 24, testament: “OT” },
-{ name: “1 Kings”, chapters: 22, testament: “OT” },
-{ name: “2 Kings”, chapters: 25, testament: “OT” },
-{ name: “1 Chronicles”, chapters: 29, testament: “OT” },
-{ name: “2 Chronicles”, chapters: 36, testament: “OT” },
-{ name: “Ezra”, chapters: 10, testament: “OT” },
-{ name: “Nehemiah”, chapters: 13, testament: “OT” },
-{ name: “Esther”, chapters: 10, testament: “OT” },
-{ name: “Job”, chapters: 42, testament: “OT” },
-{ name: “Psalms”, chapters: 150, testament: “OT” },
-{ name: “Proverbs”, chapters: 31, testament: “OT” },
-{ name: “Ecclesiastes”, chapters: 12, testament: “OT” },
-{ name: “Song of Solomon”, chapters: 8, testament: “OT” },
-{ name: “Isaiah”, chapters: 66, testament: “OT” },
-{ name: “Jeremiah”, chapters: 52, testament: “OT” },
-{ name: “Lamentations”, chapters: 5, testament: “OT” },
-{ name: “Ezekiel”, chapters: 48, testament: “OT” },
-{ name: “Daniel”, chapters: 12, testament: “OT” },
-{ name: “Hosea”, chapters: 14, testament: “OT” },
-{ name: “Joel”, chapters: 3, testament: “OT” },
-{ name: “Amos”, chapters: 9, testament: “OT” },
-{ name: “Obadiah”, chapters: 1, testament: “OT” },
-{ name: “Jonah”, chapters: 4, testament: “OT” },
-{ name: “Micah”, chapters: 7, testament: “OT” },
-{ name: “Nahum”, chapters: 3, testament: “OT” },
-{ name: “Habakkuk”, chapters: 3, testament: “OT” },
-{ name: “Zephaniah”, chapters: 3, testament: “OT” },
-{ name: “Haggai”, chapters: 2, testament: “OT” },
-{ name: “Zechariah”, chapters: 14, testament: “OT” },
-{ name: “Malachi”, chapters: 4, testament: “OT” },
-{ name: “Matthew”, chapters: 28, testament: “NT” },
-{ name: “Mark”, chapters: 16, testament: “NT” },
-{ name: “Luke”, chapters: 24, testament: “NT” },
-{ name: “John”, chapters: 21, testament: “NT” },
-{ name: “Acts”, chapters: 28, testament: “NT” },
-{ name: “Romans”, chapters: 16, testament: “NT” },
-{ name: “1 Corinthians”, chapters: 16, testament: “NT” },
-{ name: “2 Corinthians”, chapters: 13, testament: “NT” },
-{ name: “Galatians”, chapters: 6, testament: “NT” },
-{ name: “Ephesians”, chapters: 6, testament: “NT” },
-{ name: “Philippians”, chapters: 4, testament: “NT” },
-{ name: “Colossians”, chapters: 4, testament: “NT” },
-{ name: “1 Thessalonians”, chapters: 5, testament: “NT” },
-{ name: “2 Thessalonians”, chapters: 3, testament: “NT” },
-{ name: “1 Timothy”, chapters: 6, testament: “NT” },
-{ name: “2 Timothy”, chapters: 4, testament: “NT” },
-{ name: “Titus”, chapters: 3, testament: “NT” },
-{ name: “Philemon”, chapters: 1, testament: “NT” },
-{ name: “Hebrews”, chapters: 13, testament: “NT” },
-{ name: “James”, chapters: 5, testament: “NT” },
-{ name: “1 Peter”, chapters: 5, testament: “NT” },
-{ name: “2 Peter”, chapters: 3, testament: “NT” },
-{ name: “1 John”, chapters: 5, testament: “NT” },
-{ name: “2 John”, chapters: 1, testament: “NT” },
-{ name: “3 John”, chapters: 1, testament: “NT” },
-{ name: “Jude”, chapters: 1, testament: “NT” },
-{ name: “Revelation”, chapters: 22, testament: “NT” },
+{ name: "Genesis”, chapters: 50, testament: "OT” },
+{ name: "Exodus”, chapters: 40, testament: "OT” },
+{ name: "Leviticus”, chapters: 27, testament: "OT” },
+{ name: "Numbers”, chapters: 36, testament: "OT” },
+{ name: "Deuteronomy”, chapters: 34, testament: "OT” },
+{ name: "Joshua”, chapters: 24, testament: "OT” },
+{ name: "Judges”, chapters: 21, testament: "OT” },
+{ name: "Ruth”, chapters: 4, testament: "OT” },
+{ name: "1 Samuel”, chapters: 31, testament: "OT” },
+{ name: "2 Samuel”, chapters: 24, testament: "OT” },
+{ name: "1 Kings”, chapters: 22, testament: "OT” },
+{ name: "2 Kings”, chapters: 25, testament: "OT” },
+{ name: "1 Chronicles”, chapters: 29, testament: "OT” },
+{ name: "2 Chronicles”, chapters: 36, testament: "OT” },
+{ name: "Ezra”, chapters: 10, testament: "OT” },
+{ name: "Nehemiah”, chapters: 13, testament: "OT” },
+{ name: "Esther”, chapters: 10, testament: "OT” },
+{ name: "Job”, chapters: 42, testament: "OT” },
+{ name: "Psalms”, chapters: 150, testament: "OT” },
+{ name: "Proverbs”, chapters: 31, testament: "OT” },
+{ name: "Ecclesiastes”, chapters: 12, testament: "OT” },
+{ name: "Song of Solomon”, chapters: 8, testament: "OT” },
+{ name: "Isaiah”, chapters: 66, testament: "OT” },
+{ name: "Jeremiah”, chapters: 52, testament: "OT” },
+{ name: "Lamentations”, chapters: 5, testament: "OT” },
+{ name: "Ezekiel”, chapters: 48, testament: "OT” },
+{ name: "Daniel”, chapters: 12, testament: "OT” },
+{ name: "Hosea”, chapters: 14, testament: "OT” },
+{ name: "Joel”, chapters: 3, testament: "OT” },
+{ name: "Amos”, chapters: 9, testament: "OT” },
+{ name: "Obadiah”, chapters: 1, testament: "OT” },
+{ name: "Jonah”, chapters: 4, testament: "OT” },
+{ name: "Micah”, chapters: 7, testament: "OT” },
+{ name: "Nahum”, chapters: 3, testament: "OT” },
+{ name: "Habakkuk”, chapters: 3, testament: "OT” },
+{ name: "Zephaniah”, chapters: 3, testament: "OT” },
+{ name: "Haggai”, chapters: 2, testament: "OT” },
+{ name: "Zechariah”, chapters: 14, testament: "OT” },
+{ name: "Malachi”, chapters: 4, testament: "OT” },
+{ name: "Matthew”, chapters: 28, testament: "NT” },
+{ name: "Mark”, chapters: 16, testament: "NT” },
+{ name: "Luke”, chapters: 24, testament: "NT” },
+{ name: "John”, chapters: 21, testament: "NT” },
+{ name: "Acts”, chapters: 28, testament: "NT” },
+{ name: "Romans”, chapters: 16, testament: "NT” },
+{ name: "1 Corinthians”, chapters: 16, testament: "NT” },
+{ name: "2 Corinthians”, chapters: 13, testament: "NT” },
+{ name: "Galatians”, chapters: 6, testament: "NT” },
+{ name: "Ephesians”, chapters: 6, testament: "NT” },
+{ name: "Philippians”, chapters: 4, testament: "NT” },
+{ name: "Colossians”, chapters: 4, testament: "NT” },
+{ name: "1 Thessalonians”, chapters: 5, testament: "NT” },
+{ name: "2 Thessalonians”, chapters: 3, testament: "NT” },
+{ name: "1 Timothy”, chapters: 6, testament: "NT” },
+{ name: "2 Timothy”, chapters: 4, testament: "NT” },
+{ name: "Titus”, chapters: 3, testament: "NT” },
+{ name: "Philemon”, chapters: 1, testament: "NT” },
+{ name: "Hebrews”, chapters: 13, testament: "NT” },
+{ name: "James”, chapters: 5, testament: "NT” },
+{ name: "1 Peter”, chapters: 5, testament: "NT” },
+{ name: "2 Peter”, chapters: 3, testament: "NT” },
+{ name: "1 John”, chapters: 5, testament: "NT” },
+{ name: "2 John”, chapters: 1, testament: "NT” },
+{ name: "3 John”, chapters: 1, testament: "NT” },
+{ name: "Jude”, chapters: 1, testament: "NT” },
+{ name: "Revelation”, chapters: 22, testament: "NT” },
 ];
 
 const C = {
-bg: “#0f1a12”,
-cardBg: “#162a1c”,
-cardBgAlt: “#1a3322”,
-cardComplete: “#1c3528”,
-accent: “#6fcf8a”,
-accentDim: “#4aad6a”,
-accentDark: “#2d7a4a”,
-text: “#d9efe0”,
-textMid: “#8db89e”,
-textDim: “#4a7a5e”,
-chapterUnread: “#162a1c”,
-chapterRead1: “rgba(77,160,100,0.25)”,
-chapterRead2: “rgba(77,160,100,0.45)”,
-chapterRead3: “linear-gradient(135deg, #2d7a4a, #6fcf8a)”,
-ntBadgeBg: “rgba(180,140,80,0.15)”,
-ntBadgeText: “#d4a94a”,
-otBadgeBg: “rgba(110,180,130,0.15)”,
-otBadgeText: “#8db89e”,
-borderAccent: “rgba(111,207,138,0.2)”,
-borderDim: “rgba(111,207,138,0.08)”,
-resetBg: “rgba(180,80,80,0.25)”,
-resetBorder: “rgba(180,80,80,0.4)”,
-resetText: “#d4a0a0”,
+bg: "#0f1a12”,
+cardBg: "#162a1c”,
+cardBgAlt: "#1a3322”,
+cardComplete: "#1c3528”,
+accent: "#6fcf8a”,
+accentDim: "#4aad6a”,
+accentDark: "#2d7a4a”,
+text: "#d9efe0”,
+textMid: "#8db89e”,
+textDim: "#4a7a5e”,
+chapterUnread: "#162a1c”,
+chapterRead1: "rgba(77,160,100,0.25)”,
+chapterRead2: "rgba(77,160,100,0.45)”,
+chapterRead3: "linear-gradient(135deg, #2d7a4a, #6fcf8a)”,
+ntBadgeBg: "rgba(180,140,80,0.15)”,
+ntBadgeText: "#d4a94a”,
+otBadgeBg: "rgba(110,180,130,0.15)”,
+otBadgeText: "#8db89e”,
+borderAccent: "rgba(111,207,138,0.2)”,
+borderDim: "rgba(111,207,138,0.08)”,
+resetBg: "rgba(180,80,80,0.25)”,
+resetBorder: "rgba(180,80,80,0.4)”,
+resetText: "#d4a0a0”,
 };
 
 const TOTAL_CHAPTERS = BIBLE_BOOKS.reduce((sum, b) => sum + b.chapters, 0);
@@ -133,7 +133,7 @@ if (snapshot.exists()) {
 return snapshot.val();
 }
 } catch (e) {
-console.error(“Load failed:”, e);
+console.error("Load failed:”, e);
 }
 return initData();
 }
@@ -146,7 +146,7 @@ if (snapshot.exists()) {
 return snapshot.val();
 }
 } catch (e) {
-console.error(“Load lastRead failed:”, e);
+console.error("Load lastRead failed:”, e);
 }
 return {};
 }
@@ -156,7 +156,7 @@ try {
 const dataRef = ref(database, ‘reading’);
 await set(dataRef, data);
 } catch (e) {
-console.error(“Save failed:”, e);
+console.error("Save failed:”, e);
 }
 }
 
@@ -169,7 +169,7 @@ lastReadData[bookName] = timestamp;
 await set(lastReadRef, lastReadData);
 return timestamp;
 } catch (e) {
-console.error(“Save lastRead failed:”, e);
+console.error("Save lastRead failed:”, e);
 }
 }
 
@@ -194,7 +194,7 @@ return { totalRead, totalReads, pct: (totalRead / TOTAL_CHAPTERS) * 100 };
 }
 
 function formatTimestamp(isoString) {
-if (!isoString) return “”;
+if (!isoString) return "”;
 const date = new Date(isoString);
 const now = new Date();
 const diffMs = now - date;
@@ -202,7 +202,7 @@ const diffMins = Math.floor(diffMs / 60000);
 const diffHours = Math.floor(diffMs / 3600000);
 const diffDays = Math.floor(diffMs / 86400000);
 
-if (diffMins < 1) return “Just now”;
+if (diffMins < 1) return "Just now”;
 if (diffMins < 60) return `${diffMins}m ago`;
 if (diffHours < 24) return `${diffHours}h ago`;
 if (diffDays < 7) return `${diffDays}d ago`;
@@ -214,7 +214,7 @@ export default function BibleTracker() {
 const [data, setData] = useState(null);
 const [lastRead, setLastRead] = useState({});
 const [expandedBook, setExpandedBook] = useState(null);
-const [filter, setFilter] = useState(“All”);
+const [filter, setFilter] = useState("All”);
 const [searchQuery, setSearchQuery] = useState(””);
 const [loading, setLoading] = useState(true);
 const [showReset, setShowReset] = useState(false);
@@ -252,8 +252,8 @@ setShowReset(false);
 
 if (loading || !data) {
 return (
-<div style={{ minHeight: “100vh”, background: C.bg, display: “flex”, alignItems: “center”, justifyContent: “center” }}>
-<div style={{ color: C.accent, fontFamily: “‘Palatino Linotype’, ‘Book Antiqua’, Palatino, serif”, fontSize: 18, letterSpacing: 2 }}>
+<div style={{ minHeight: "100vh”, background: C.bg, display: "flex”, alignItems: "center”, justifyContent: "center” }}>
+<div style={{ color: C.accent, fontFamily: "‘Palatino Linotype’, ‘Book Antiqua’, Palatino, serif”, fontSize: 18, letterSpacing: 2 }}>
 Loading…
 </div>
 </div>
@@ -264,23 +264,23 @@ const overall = getOverallStats(data);
 const completedBooks = BIBLE_BOOKS.filter(b => getBookStats(data, b.name, b.chapters).read === b.chapters);
 
 const filteredBooks = BIBLE_BOOKS.filter((book) => {
-const matchesFilter = filter === “All” || book.testament === filter;
+const matchesFilter = filter === "All” || book.testament === filter;
 const matchesSearch = book.name.toLowerCase().includes(searchQuery.toLowerCase());
 return matchesFilter && matchesSearch;
 });
 
 return (
 <div style={{
-minHeight: “100vh”,
+minHeight: "100vh”,
 background: C.bg,
 color: C.text,
-fontFamily: “‘Palatino Linotype’, ‘Book Antiqua’, Palatino, serif”,
-position: “relative”,
-overflow: “hidden”,
+fontFamily: "‘Palatino Linotype’, ‘Book Antiqua’, Palatino, serif”,
+position: "relative”,
+overflow: "hidden”,
 }}>
 <div style={{
-position: “fixed”, inset: 0, pointerEvents: “none”, zIndex: 0,
-background: “radial-gradient(ellipse at 20% 50%, rgba(111,207,138,0.04) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(45,122,74,0.06) 0%, transparent 50%), radial-gradient(ellipse at 50% 80%, rgba(111,207,138,0.03) 0%, transparent 50%)”
+position: "fixed”, inset: 0, pointerEvents: "none”, zIndex: 0,
+background: "radial-gradient(ellipse at 20% 50%, rgba(111,207,138,0.04) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(45,122,74,0.06) 0%, transparent 50%), radial-gradient(ellipse at 50% 80%, rgba(111,207,138,0.03) 0%, transparent 50%)”
 }} />
 
 ```
