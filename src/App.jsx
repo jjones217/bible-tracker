@@ -138,15 +138,15 @@ async function loadData() {
   return initData();
 }
 
-async function loadLastRead() {
+async function loadChapterTimestamps() {
   try {
-    const lastReadRef = ref(database, 'lastRead');
-    const snapshot = await get(lastReadRef);
+    const timestampsRef = ref(database, 'chapterTimestamps');
+    const snapshot = await get(timestampsRef);
     if (snapshot.exists()) {
       return snapshot.val();
     }
   } catch (e) {
-    console.error("Load lastRead failed:", e);
+    console.error("Load timestamps failed:", e);
   }
   return {};
 }
@@ -160,16 +160,19 @@ async function saveData(data) {
   }
 }
 
-async function saveLastRead(bookName) {
+async function saveChapterTimestamp(bookName, chapter) {
   try {
-    const lastReadRef = ref(database, 'lastRead');
+    const timestampsRef = ref(database, 'chapterTimestamps');
     const timestamp = new Date().toISOString();
-    const lastReadData = await loadLastRead();
-    lastReadData[bookName] = timestamp;
-    await set(lastReadRef, lastReadData);
+    const allTimestamps = await loadChapterTimestamps();
+    if (!allTimestamps[bookName]) {
+      allTimestamps[bookName] = {};
+    }
+    allTimestamps[bookName][chapter] = timestamp;
+    await set(timestampsRef, allTimestamps);
     return timestamp;
   } catch (e) {
-    console.error("Save lastRead failed:", e);
+    console.error("Save timestamp failed:", e);
   }
 }
 
@@ -212,7 +215,7 @@ function formatTimestamp(isoString) {
 
 export default function BibleTracker() {
   const [data, setData] = useState(null);
-  const [lastRead, setLastRead] = useState({});
+  const [chapterTimestamps, setChapterTimestamps] = useState({});
   const [expandedBook, setExpandedBook] = useState(null);
   const [filter, setFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
@@ -221,9 +224,9 @@ export default function BibleTracker() {
   const [showCompleted, setShowCompleted] = useState(false);
 
   useEffect(() => {
-    Promise.all([loadData(), loadLastRead()]).then(([d, lr]) => { 
+    Promise.all([loadData(), loadChapterTimestamps()]).then(([d, ts]) => { 
       setData(d); 
-      setLastRead(lr);
+      setChapterTimestamps(ts);
       setLoading(false); 
     });
   }, []);
@@ -234,9 +237,16 @@ export default function BibleTracker() {
       const current = next[bookName][chapter] || 0;
       next[bookName][chapter] = Math.max(0, current + delta);
       saveData(next);
-      saveLastRead(bookName).then(timestamp => {
-        setLastRead(prev => ({ ...prev, [bookName]: timestamp }));
-      });
+      
+      if (delta > 0) {
+        saveChapterTimestamp(bookName, chapter).then(timestamp => {
+          setChapterTimestamps(prev => ({
+            ...prev,
+            [bookName]: { ...(prev[bookName] || {}), [chapter]: timestamp }
+          }));
+        });
+      }
+      
       return next;
     });
   }, []);
@@ -245,8 +255,8 @@ export default function BibleTracker() {
     const fresh = initData();
     setData(fresh);
     await saveData(fresh);
-    setLastRead({});
-    await set(ref(database, 'lastRead'), {});
+    setChapterTimestamps({});
+    await set(ref(database, 'chapterTimestamps'), {});
     setShowReset(false);
   };
 
@@ -446,7 +456,6 @@ export default function BibleTracker() {
             const stats = getBookStats(data, book.name, book.chapters);
             const isExpanded = expandedBook === book.name;
             const isComplete = stats.read === book.chapters;
-            const bookLastRead = lastRead[book.name];
             
             return (
               <div key={book.name} style={{
@@ -486,11 +495,6 @@ export default function BibleTracker() {
                         </span>
                       )}
                     </div>
-                    {bookLastRead && (
-                      <div style={{ fontSize: 10, color: C.textDim, marginBottom: 3 }}>
-                        Last read: {formatTimestamp(bookLastRead)}
-                      </div>
-                    )}
                     <div style={{ height: 3, background: C.bg, borderRadius: 2, overflow: "hidden" }}>
                       <div style={{
                         height: "100%", width: stats.pct + "%",
@@ -510,6 +514,8 @@ export default function BibleTracker() {
                       {Array.from({ length: book.chapters }, (_, i) => i + 1).map((ch) => {
                         const count = data[book.name]?.[ch] || 0;
                         const isRead = count > 0;
+                        const chapterTimestamp = chapterTimestamps[book.name]?.[ch];
+                        
                         return (
                           <div key={ch} style={{ display: "flex", alignItems: "center", gap: 8 }}>
                             <div style={{ 
@@ -520,25 +526,32 @@ export default function BibleTracker() {
                             }}>
                               Ch {ch}
                             </div>
-                            <button onClick={() => updateChapter(book.name, ch, 1)} style={{
-                              flex: 1,
-                              height: 36,
-                              borderRadius: 7,
-                              background: isRead
-                                ? (count >= 3 ? C.chapterRead3 : count >= 2 ? C.chapterRead2 : C.chapterRead1)
-                                : C.chapterUnread,
-                              border: isRead ? "1px solid rgba(111,207,138,0.3)" : "1px solid rgba(111,207,138,0.1)",
-                              color: isRead ? C.accent : C.textDim,
-                              fontSize: 12,
-                              cursor: "pointer",
-                              transition: "all 0.2s",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontWeight: 500,
-                            }}>
-                              {count === 0 ? "Mark Read" : "Read " + count + "×"}
-                            </button>
+                            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2 }}>
+                              <button onClick={() => updateChapter(book.name, ch, 1)} style={{
+                                width: "100%",
+                                height: 36,
+                                borderRadius: 7,
+                                background: isRead
+                                  ? (count >= 3 ? C.chapterRead3 : count >= 2 ? C.chapterRead2 : C.chapterRead1)
+                                  : C.chapterUnread,
+                                border: isRead ? "1px solid rgba(111,207,138,0.3)" : "1px solid rgba(111,207,138,0.1)",
+                                color: isRead ? C.accent : C.textDim,
+                                fontSize: 12,
+                                cursor: "pointer",
+                                transition: "all 0.2s",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontWeight: 500,
+                              }}>
+                                {count === 0 ? "Mark Read" : "Read " + count + "×"}
+                              </button>
+                              {chapterTimestamp && (
+                                <div style={{ fontSize: 9, color: C.textDim, textAlign: "center" }}>
+                                  {formatTimestamp(chapterTimestamp)}
+                                </div>
+                              )}
+                            </div>
                             {count > 0 && (
                               <button onClick={() => updateChapter(book.name, ch, -1)} style={{
                                 width: 36,
