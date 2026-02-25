@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
-import { ChevronDown, ChevronRight, BookOpen, RotateCcw, Award } from "lucide-react";
+import { ChevronDown, ChevronRight, BookOpen, RotateCcw, Award, LogOut } from "lucide-react";
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref, get, set } from "firebase/database";
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDcGf3RewwFxVzQmQWl3-LhasbJNNob5eU",
@@ -16,6 +17,8 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
+const auth = getAuth(app);
+const googleProvider = new GoogleAuthProvider();
 
 const BIBLE_BOOKS = [
   { name: "Genesis", chapters: 50, testament: "OT" },
@@ -125,9 +128,9 @@ function initData() {
   return data;
 }
 
-async function loadData() {
+async function loadData(userId) {
   try {
-    const dataRef = ref(database, 'reading');
+    const dataRef = ref(database, "users/" + userId + "/reading");
     const snapshot = await get(dataRef);
     if (snapshot.exists()) {
       return snapshot.val();
@@ -138,9 +141,9 @@ async function loadData() {
   return initData();
 }
 
-async function loadChapterTimestamps() {
+async function loadChapterTimestamps(userId) {
   try {
-    const timestampsRef = ref(database, 'chapterTimestamps');
+    const timestampsRef = ref(database, "users/" + userId + "/chapterTimestamps");
     const snapshot = await get(timestampsRef);
     if (snapshot.exists()) {
       return snapshot.val();
@@ -151,20 +154,20 @@ async function loadChapterTimestamps() {
   return {};
 }
 
-async function saveData(data) {
+async function saveData(userId, data) {
   try {
-    const dataRef = ref(database, 'reading');
+    const dataRef = ref(database, "users/" + userId + "/reading");
     await set(dataRef, data);
   } catch (e) {
     console.error("Save failed:", e);
   }
 }
 
-async function saveChapterTimestamp(bookName, chapter) {
+async function saveChapterTimestamp(userId, bookName, chapter) {
   try {
-    const timestampsRef = ref(database, 'chapterTimestamps');
+    const timestampsRef = ref(database, "users/" + userId + "/chapterTimestamps");
     const timestamp = new Date().toISOString();
-    const allTimestamps = await loadChapterTimestamps();
+    const allTimestamps = await loadChapterTimestamps(userId);
     if (!allTimestamps[bookName]) {
       allTimestamps[bookName] = {};
     }
@@ -210,10 +213,100 @@ function formatTimestamp(isoString) {
   if (diffHours < 24) return diffHours + "h ago";
   if (diffDays < 7) return diffDays + "d ago";
   
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
+function SignInScreen() {
+  const [signingIn, setSigningIn] = useState(false);
+  
+  const handleSignIn = async () => {
+    setSigningIn(true);
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (error) {
+      console.error("Sign-in error:", error);
+      setSigningIn(false);
+    }
+  };
+
+  return (
+    <div style={{
+      minHeight: "100vh",
+      background: C.bg,
+      color: C.text,
+      fontFamily: "'Palatino Linotype', 'Book Antiqua', Palatino, serif",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      position: "relative",
+      overflow: "hidden",
+    }}>
+      <div style={{
+        position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0,
+        background: "radial-gradient(ellipse at 20% 50%, rgba(111,207,138,0.04) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(45,122,74,0.06) 0%, transparent 50%), radial-gradient(ellipse at 50% 80%, rgba(111,207,138,0.03) 0%, transparent 50%)"
+      }} />
+      
+      <div style={{
+        position: "relative",
+        zIndex: 1,
+        textAlign: "center",
+        background: "linear-gradient(135deg, " + C.cardBg + " 0%, " + C.cardBgAlt + " 100%)",
+        padding: "48px 40px",
+        borderRadius: 16,
+        border: "1px solid " + C.borderAccent,
+        maxWidth: 400,
+        margin: "0 16px",
+      }}>
+        <BookOpen size={48} color={C.accent} style={{ marginBottom: 16 }} />
+        <h1 style={{ 
+          margin: "0 0 8px", 
+          fontSize: 28, 
+          fontWeight: 400, 
+          letterSpacing: 3, 
+          color: C.accent, 
+          textTransform: "uppercase" 
+        }}>
+          Scripture Tracker
+        </h1>
+        <p style={{ margin: "0 0 32px", fontSize: 14, color: C.textMid, letterSpacing: 0.5 }}>
+          Track your journey through God&apos;s Word
+        </p>
+        
+        <button
+          onClick={handleSignIn}
+          disabled={signingIn}
+          style={{
+            width: "100%",
+            background: signingIn ? "rgba(111,207,138,0.1)" : "linear-gradient(135deg, " + C.accentDark + ", " + C.accent + ")",
+            border: "1px solid " + C.accent,
+            color: signingIn ? C.textDim : C.bg,
+            padding: "14px 24px",
+            borderRadius: 8,
+            fontSize: 15,
+            fontWeight: 500,
+            cursor: signingIn ? "not-allowed" : "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 10,
+            transition: "all 0.2s",
+            fontFamily: "'Palatino Linotype', 'Book Antiqua', Palatino, serif",
+          }}
+        >
+          {signingIn ? "Signing in..." : "Sign in with Google"}
+        </button>
+        
+        <p style={{ margin: "24px 0 0", fontSize: 12, color: C.textDim }}>
+          Your reading progress will sync across all your devices
+        </p>
+      </div>
+    </div>
+  );
 }
 
 export default function BibleTracker() {
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [data, setData] = useState(null);
   const [chapterTimestamps, setChapterTimestamps] = useState({});
   const [expandedBook, setExpandedBook] = useState(null);
@@ -224,22 +317,36 @@ export default function BibleTracker() {
   const [showCompleted, setShowCompleted] = useState(false);
 
   useEffect(() => {
-    Promise.all([loadData(), loadChapterTimestamps()]).then(([d, ts]) => { 
-      setData(d); 
-      setChapterTimestamps(ts);
-      setLoading(false); 
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setAuthLoading(false);
+      
+      if (currentUser) {
+        Promise.all([
+          loadData(currentUser.uid), 
+          loadChapterTimestamps(currentUser.uid)
+        ]).then(([d, ts]) => { 
+          setData(d); 
+          setChapterTimestamps(ts);
+          setLoading(false); 
+        });
+      }
     });
+    
+    return () => unsubscribe();
   }, []);
 
   const updateChapter = useCallback((bookName, chapter, delta) => {
+    if (!user) return;
+    
     setData((prev) => {
       const next = { ...prev, [bookName]: { ...prev[bookName] } };
       const current = next[bookName][chapter] || 0;
       next[bookName][chapter] = Math.max(0, current + delta);
-      saveData(next);
+      saveData(user.uid, next);
       
       if (delta > 0) {
-        saveChapterTimestamp(bookName, chapter).then(timestamp => {
+        saveChapterTimestamp(user.uid, bookName, chapter).then(timestamp => {
           setChapterTimestamps(prev => ({
             ...prev,
             [bookName]: { ...(prev[bookName] || {}), [chapter]: timestamp }
@@ -249,22 +356,46 @@ export default function BibleTracker() {
       
       return next;
     });
-  }, []);
+  }, [user]);
 
   const resetAll = async () => {
+    if (!user) return;
+    
     const fresh = initData();
     setData(fresh);
-    await saveData(fresh);
+    await saveData(user.uid, fresh);
     setChapterTimestamps({});
-    await set(ref(database, 'chapterTimestamps'), {});
+    await set(ref(database, "users/" + user.uid + "/chapterTimestamps"), {});
     setShowReset(false);
   };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Sign-out error:", error);
+    }
+  };
+
+  if (authLoading) {
+    return (
+      <div style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ color: C.accent, fontFamily: "'Palatino Linotype', 'Book Antiqua', Palatino, serif", fontSize: 18, letterSpacing: 2 }}>
+          Loading...
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <SignInScreen />;
+  }
 
   if (loading || !data) {
     return (
       <div style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ color: C.accent, fontFamily: "'Palatino Linotype', 'Book Antiqua', Palatino, serif", fontSize: 18, letterSpacing: 2 }}>
-          Loading...
+          Loading your data...
         </div>
       </div>
     );
@@ -304,6 +435,44 @@ export default function BibleTracker() {
           </div>
           <div style={{ width: 48, height: 1, background: "linear-gradient(90deg, transparent, " + C.accent + ", transparent)", margin: "0 auto 4px" }} />
           <p style={{ margin: 0, fontSize: 13, color: C.textMid, letterSpacing: 1 }}>Track your journey through God&apos;s Word</p>
+          
+          <div style={{ 
+            marginTop: 16, 
+            display: "flex", 
+            alignItems: "center", 
+            justifyContent: "center", 
+            gap: 10,
+            padding: "8px 16px",
+            background: "rgba(22,42,28,0.4)",
+            borderRadius: 20,
+            border: "1px solid " + C.borderDim,
+            maxWidth: "fit-content",
+            margin: "16px auto 0",
+          }}>
+            {user.photoURL && (
+              <img 
+                src={user.photoURL} 
+                alt={user.displayName || "User"} 
+                style={{ width: 24, height: 24, borderRadius: "50%" }}
+              />
+            )}
+            <span style={{ fontSize: 13, color: C.textMid }}>{user.displayName || user.email}</span>
+            <button
+              onClick={handleSignOut}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: C.textDim,
+                cursor: "pointer",
+                padding: 4,
+                display: "flex",
+                alignItems: "center",
+              }}
+              title="Sign out"
+            >
+              <LogOut size={14} />
+            </button>
+          </div>
         </div>
 
         <div style={{
